@@ -1,4 +1,4 @@
-;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC
+;;; xml-rpc.el --- An elisp implementation of clientside XML-RPC -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2002-2010 Mark A. Hershberger
 ;; Copyright (C) 2001 CodeFactory AB.
@@ -209,7 +209,7 @@
 (require 'url-http)
 (require 'timezone)
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (defconst xml-rpc-maintainer-address "mah@everybody.org"
   "The address where bug reports should be sent.")
@@ -254,20 +254,6 @@ Set it higher to get some info in the *Messages* buffer"
   "A list of extra headers to send with the next request.
 Should be an assoc list of headers/contents.  See `url-request-extra-headers'")
 
-(defsubst xml-rpc-valuep (value)
-  "Return t if VALUE is any sort of xml-rpc structure.
-
-Return nil otherwise."
-  (or (xml-rpc-value-intp value)
-      (xml-rpc-value-doublep value)
-      (xml-rpc-value-stringp value)
-      (xml-rpc-value-structp value)
-      (xml-rpc-value-arrayp value)
-      (xml-rpc-value-vectorp value)
-      (xml-rpc-value-booleanp value)
-      (xml-rpc-value-datetimep value)
-      (xml-rpc-value-base64p value)))
-
 ;;
 ;; Value type handling functions
 ;;
@@ -286,7 +272,7 @@ Return nil otherwise."
 
 ;; An XML-RPC struct is a list where every car is cons or a list of
 ;; length 1 or 2 and has a string for car.
-(defsubst xml-rpc-value-structp (value)
+(defun xml-rpc-value-structp (value)
   "Return t if VALUE is an XML-RPC struct."
   (and (listp value)
        (let ((vals value)
@@ -335,6 +321,20 @@ implementation, you must put keyword :base64 before the
 sequence, or it will be confused for a list."
   (and (listp value)
        (eq (car value) :base64)))
+
+(defun xml-rpc-valuep (value)
+  "Return t if VALUE is any sort of xml-rpc structure.
+
+Return nil otherwise."
+  (or (xml-rpc-value-intp value)
+      (xml-rpc-value-doublep value)
+      (xml-rpc-value-stringp value)
+      (xml-rpc-value-structp value)
+      (xml-rpc-value-arrayp value)
+      (xml-rpc-value-vectorp value)
+      (xml-rpc-value-booleanp value)
+      (xml-rpc-value-datetimep value)
+      (xml-rpc-value-base64p value)))
 
 (defun xml-rpc-string-to-boolean (value)
   "Return t if VALUE is a boolean"
@@ -560,7 +560,7 @@ or nil if called with ASYNC-CALLBACK-FUNCTION."
                            (buffer-string)))
                        "\n"))
               (url-mime-charset-string "utf-8;q=1, iso-8859-1;q=0.5")
-              (url-request-coding-system xml-rpc-use-coding-system)
+              ;; (url-request-coding-system xml-rpc-use-coding-system)
               (url-http-attempt-keepalives t)
               (url-request-extra-headers (append
                                           (list
@@ -694,7 +694,7 @@ handled from XML-BUFFER."
     (funcall callback-fun (xml-rpc-xml-to-response xml-response))))
 
 
-(defun xml-new-rpc-request-callback-handler (status callback-fun)
+(defun xml-new-rpc-request-callback-handler (_status callback-fun)
   "Handle a new style `url-retrieve' callback passing `STATUS' and `CALLBACK-FUN'."
   (let ((xml-buffer (current-buffer)))
     (xml-rpc-request-callback-handler callback-fun xml-buffer)))
